@@ -1,0 +1,1 @@
+"""`nSmart Campus AI Decision Support & Automation System`nMaster CLI Runner & Interactive Demonstration Menu`n"""`n`ndef main():`n    print("Smart Campus AI Decision Support & Automation System")`n`nif __name__ == "__main__":`n    main()
