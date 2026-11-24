@@ -14,6 +14,7 @@ from core.contracts import (
     IScheduler
 )
 from core.models import RouteResult, PriorityResult, LogicResult, CSPResult
+from ai_engines.navigation.search_engine import SearchEngine
 
 
 # =====================================================================
@@ -114,7 +115,7 @@ class AIEngineFacade(IAIEngineFacade):
         logic_verifier: Optional[ILogicVerifier] = None,
         scheduler: Optional[IScheduler] = None
     ) -> None:
-        self._nav: IRouteFinder = route_finder or _StubRouteFinder()
+        self._nav: IRouteFinder = route_finder or SearchEngine()
         self._ann: IPriorityClassifier = priority_classifier or _StubPriorityClassifier()
         self._logic: ILogicVerifier = logic_verifier or _StubLogicVerifier()
         self._csp: IScheduler = scheduler or _StubScheduler()
