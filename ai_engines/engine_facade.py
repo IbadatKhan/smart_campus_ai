@@ -15,6 +15,8 @@ from core.contracts import (
 )
 from core.models import RouteResult, PriorityResult, LogicResult, CSPResult
 from ai_engines.navigation.search_engine import SearchEngine
+from ai_engines.reasoning.logic_kb import LogicKBGatekeeper
+from ai_engines.reasoning.csp_scheduler import CSPScheduler
 
 
 # =====================================================================
@@ -117,8 +119,8 @@ class AIEngineFacade(IAIEngineFacade):
     ) -> None:
         self._nav: IRouteFinder = route_finder or SearchEngine()
         self._ann: IPriorityClassifier = priority_classifier or _StubPriorityClassifier()
-        self._logic: ILogicVerifier = logic_verifier or _StubLogicVerifier()
-        self._csp: IScheduler = scheduler or _StubScheduler()
+        self._logic: ILogicVerifier = logic_verifier or LogicKBGatekeeper()
+        self._csp: IScheduler = scheduler or CSPScheduler()
 
     # --- Routing Delegations ---
     def compute_route(self, start_node: str, goal_node: str, graph_type: str = "weighted") -> RouteResult:
