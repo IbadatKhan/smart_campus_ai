@@ -17,6 +17,7 @@ from core.models import RouteResult, PriorityResult, LogicResult, CSPResult
 from ai_engines.navigation.search_engine import SearchEngine
 from ai_engines.reasoning.logic_kb import LogicKBGatekeeper
 from ai_engines.reasoning.csp_scheduler import CSPScheduler
+from ai_engines.priority_ann.neural_engine import PriorityNeuralEngine
 
 
 # =====================================================================
@@ -118,7 +119,7 @@ class AIEngineFacade(IAIEngineFacade):
         scheduler: Optional[IScheduler] = None
     ) -> None:
         self._nav: IRouteFinder = route_finder or SearchEngine()
-        self._ann: IPriorityClassifier = priority_classifier or _StubPriorityClassifier()
+        self._ann: IPriorityClassifier = priority_classifier or PriorityNeuralEngine()
         self._logic: ILogicVerifier = logic_verifier or LogicKBGatekeeper()
         self._csp: IScheduler = scheduler or CSPScheduler()
 
