@@ -68,7 +68,6 @@ class IScheduler(ABC):
 class IAIEngineFacade(IRouteFinder, IPriorityClassifier, ILogicVerifier, IScheduler):
     """
     Unified Subsystem Facade Interface (Master Facade 2 Port).
-    Inherits all 4 ports above with zero duplicate method signatures,
-    mirroring IDALFacade in SCD.
+    Inherits all 4 ports above with zero duplicate method signatures.
     """
     pass

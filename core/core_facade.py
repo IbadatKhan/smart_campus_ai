@@ -1,7 +1,7 @@
 """
 Module: core.core_facade
 Description: MASTER FACADE 1 (CoreFacade).
-Central orchestrator sitting at Layer 1 <-> Layer 2 boundary (identical to BLLFacade in SCD).
+Central orchestrator sitting at Layer 1 <-> Layer 2 boundary.
 Coordinates the 5 Canonical Pipelines with fail-fast early exit rejections.
 """
 
@@ -21,17 +21,21 @@ from core.models import (
 class CoreFacade:
     """
     Master Facade 1:
-    Single point of contact for the Presentation Layer (CLI).
+    Single point of contact for the Presentation Layer (CLI & GUI).
     Coordinates preprocessing, pipeline filtering, and delegates to IAIEngineFacade (Facade 2).
     """
 
     def __init__(self, router: RequestRouter, ai_facade: IAIEngineFacade) -> None:
+        """
+        Initializes CoreFacade with the request router and AI engine facade.
+        """
         self._router = router
         self._ai = ai_facade
 
     def execute(self, raw_req: UniversalRequest) -> FinalResponse:
         """
-        Executes request through active filter chains with fail-fast gatekeeper logic.
+        Executes a user request through active filter chains with fail-fast gatekeeper logic.
+        Validates input, runs required AI modules, and returns an aggregated FinalResponse.
         """
         # Stage 1: Preprocessing & Validation
         preprocessed = self._router.process(raw_req)
@@ -54,11 +58,16 @@ class CoreFacade:
 
         # Stage 3: Symbolic Logic Gatekeeper (if active)
         if "LOGIC" in filters:
-            logic_res = self._ai.verify_request_eligibility(
-                user_name=raw_req.name,
-                role=raw_req.role,
-                category=raw_req.category
-            )
+            # If request is an Eligibility_Check with a formal logic query string
+            if preprocessed.request_type == "Eligibility_Check" and raw_req.query and raw_req.query.strip():
+                logic_res = self._ai.query_fact(raw_req.query.strip())
+            else:
+                logic_res = self._ai.verify_request_eligibility(
+                    user_name=raw_req.name,
+                    role=raw_req.role,
+                    category=raw_req.category
+                )
+
             # Circuit Breaker: Fail-fast if gatekeeper rejects
             if not logic_res.allowed:
                 return FinalResponse(
@@ -108,7 +117,7 @@ class CoreFacade:
                 )
 
         # Build Accepted Unified Response
-        success_msg = self._build_success_message(raw_req, csp_res, route_res)
+        success_msg = self._build_success_message(raw_req, csp_res, route_res, logic_res)
         return FinalResponse(
             request_id=raw_req.request_id,
             decision="accepted",
@@ -119,11 +128,32 @@ class CoreFacade:
             message=success_msg
         )
 
+    def compute_route(self, start: str, goal: str, graph_type: str = "weighted") -> RouteResult:
+        """
+        Directly computes the optimal navigation route between two landmarks.
+        """
+        return self._ai.compute_route(start, goal, graph_type)
+
     def run_navigation_benchmark(self, start: str, goal: str):
-        """Runs the 9-algorithm benchmark suite through the AI facade."""
+        """
+        Runs the 9-algorithm benchmark suite through the AI facade.
+        Returns comparative performance metrics for curriculum search algorithms.
+        """
         return self._ai.run_benchmark(start, goal)
 
-    def _build_success_message(self, req: UniversalRequest, csp: Optional[CSPResult], route: Optional[RouteResult]) -> str:
+    def _build_success_message(
+        self,
+        req: UniversalRequest,
+        csp: Optional[CSPResult],
+        route: Optional[RouteResult],
+        logic: Optional[LogicResult] = None
+    ) -> str:
+        """
+        Constructs a human-readable summary message tailored to the processed pipeline.
+        """
+        if req.request_type == "Eligibility_Check" and logic:
+            return f"Eligibility query resolved: {logic.explanation}"
+
         parts = [f"Request '{req.request_id}' successfully processed."]
         if csp and csp.assigned_room:
             parts.append(f"Assigned {csp.assigned_room} at slot {csp.assigned_slot}.")
